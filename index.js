@@ -67,3 +67,8 @@ cron.schedule("*/30 * * * *", async () => {
   console.log("⏰ Running account timeline fetch");
   await fetchAccountTweets(supabase);
 });
+// ---- KEEP PROCESS ALIVE ----
+setInterval(() => {
+  // This keeps the Node.js event loop active
+}, 60 * 1000);
+
