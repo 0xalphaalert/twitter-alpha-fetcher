@@ -1,5 +1,6 @@
 import cron from "node-cron";
 import { createClient } from "@supabase/supabase-js";
+import { fetchAccountTweets } from "./fetchAccounts.js";
 
 console.log("🚀 Twitter Alpha Fetcher started");
 
@@ -60,4 +61,9 @@ cron.schedule("*/5 * * * *", () => {
 process.on("SIGTERM", () => {
   console.log("❌ Process terminated");
   process.exit(0);
+});
+// ---- FETCH ACCOUNT TIMELINES (EVERY 30 MINUTES) ----
+cron.schedule("*/30 * * * *", async () => {
+  console.log("⏰ Running account timeline fetch");
+  await fetchAccountTweets(supabase);
 });
