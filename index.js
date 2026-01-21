@@ -34,7 +34,7 @@ async function testSupabaseInsert() {
   }
 }
 
-testSupabaseInsert();
+
 
 // ---- CLEANUP JOB (EVERY 6 HOURS) ----
 cron.schedule("0 */6 * * *", async () => {
