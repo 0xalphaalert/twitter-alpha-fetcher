@@ -71,4 +71,14 @@ cron.schedule("*/30 * * * *", async () => {
 setInterval(() => {
   // This keeps the Node.js event loop active
 }, 60 * 1000);
+import http from "http";
+
+const PORT = process.env.PORT || 3000;
+
+http.createServer((req, res) => {
+  res.writeHead(200, { "Content-Type": "text/plain" });
+  res.end("OK");
+}).listen(PORT, () => {
+  console.log(`🌐 Keep-alive server running on port ${PORT}`);
+});
 
