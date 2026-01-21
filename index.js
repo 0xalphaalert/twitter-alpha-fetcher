@@ -3,25 +3,28 @@ import { createClient } from "@supabase/supabase-js";
 
 console.log("🚀 Twitter Alpha Fetcher started");
 
-// Supabase client
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+// ---- SUPABASE CLIENT ----
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// ---- TEST INSERT (RUNS ON START) ----
+if (!supabaseUrl || !supabaseKey) {
+  console.error("❌ Supabase env vars missing");
+  process.exit(1);
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// ---- ONE-TIME INSERT TEST (SAFE TO KEEP FOR NOW) ----
 async function testSupabaseInsert() {
-  const { error } = await supabase
-    .from("twitter_alpha")
-    .insert({
-      tweet_id: "railway_test_" + Date.now(),
-      source_type: "global_search",
-      source_account: "railway_test",
-      category: "Airdrop",
-      content: "Railway Supabase connection test",
-      tweet_url: "https://x.com/test",
-      tweeted_at: new Date().toISOString()
-    });
+  const { error } = await supabase.from("twitter_alpha").insert({
+    tweet_id: "railway_test_" + Date.now(),
+    source_type: "global_search",
+    source_account: "railway_test",
+    category: "Airdrop",
+    content: "Railway Supabase connection test",
+    tweet_url: "https://x.com/test",
+    tweeted_at: new Date().toISOString()
+  });
 
   if (error) {
     console.error("❌ Supabase insert failed:", error.message);
@@ -30,15 +33,30 @@ async function testSupabaseInsert() {
   }
 }
 
-// Run once on startup
 testSupabaseInsert();
 
-// ---- HEALTH LOG ----
+// ---- CLEANUP JOB (EVERY 6 HOURS) ----
+cron.schedule("0 */6 * * *", async () => {
+  console.log("🧹 Running cleanup job");
+
+  const { error, count } = await supabase
+    .from("twitter_alpha")
+    .delete({ count: "exact" })
+    .lt("created_at", new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString());
+
+  if (error) {
+    console.error("❌ Cleanup failed:", error.message);
+  } else {
+    console.log(`🗑️ Cleanup complete — deleted ${count ?? 0} rows`);
+  }
+});
+
+// ---- HEALTH LOG (EVERY 5 MINUTES) ----
 cron.schedule("*/5 * * * *", () => {
   console.log("✅ Twitter Alpha Fetcher running:", new Date().toISOString());
 });
 
-// Graceful shutdown
+// ---- GRACEFUL SHUTDOWN ----
 process.on("SIGTERM", () => {
   console.log("❌ Process terminated");
   process.exit(0);
